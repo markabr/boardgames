@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: railbound-server
+    runtime: node
+    plan: free
+    buildCommand: pnpm install && pnpm run build --filter=@railbound/server...
+    startCommand: node apps/server/dist/index.js
+    envVars:
+      - key: GAME_SERVER_PORT
+        value: "3001"
+      - key: PORT
+        value: "3001"
+      - key: NEXT_PUBLIC_APP_URL
+        value: "https://boardgames-pink.vercel.app"
+      - key: NODE_ENV
+        value: "production"

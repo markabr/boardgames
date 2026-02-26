@@ -6,9 +6,21 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./ticket-to-ride": "./src/ticket-to-ride/index.ts",
-    "./shared": "./src/shared/index.ts"
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./ticket-to-ride": {
+      "types": "./src/ticket-to-ride/index.ts",
+      "import": "./dist/ticket-to-ride/index.js",
+      "default": "./dist/ticket-to-ride/index.js"
+    },
+    "./shared": {
+      "types": "./src/shared/index.ts",
+      "import": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
+    }
   },
   "scripts": {
     "build": "tsc",
