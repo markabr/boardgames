@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acquire - Board Game</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --bg2: #16213e;
+    --bg3: #0f3460;
+    --text: #e0e0e0;
+    --text-dim: #8899aa;
+    --accent: #e94560;
+    --gold: #f5c518;
+    --board-bg: #0a0a1a;
+    --cell-empty: #2a2a4a;
+    --cell-hover: #3a3a5a;
+    --cell-placed: #555577;
+    --corp-sackson: #e8890c;
+    --corp-zeta: #c4b832;
+    --corp-america: #2196F3;
+    --corp-fusion: #4CAF50;
+    --corp-worldwide: #9C27B0;
+    --corp-phoenix: #f44336;
+    --corp-continental: #00ACC1;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== HOME SCREEN ===== */
+  #homeScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .home-title {
+    font-size: 4rem;
+    font-weight: 800;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(245,197,24,0.3);
+    margin-bottom: 0.5rem;
+  }
+
+  .home-subtitle {
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    margin-bottom: 3rem;
+  }
+
+  .player-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 2rem;
+  }
+
+  .player-input-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .player-input-row label {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    width: 70px;
+    flex-shrink: 0;
+  }
+
+  .player-input-row input {
+    flex: 1;
+    padding: 0.7rem 1rem;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background: var(--bg2);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .player-input-row input:focus {
+    border-color: var(--gold);
+  }
+
+  .btn {
+    padding: 0.8rem 2.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: #1a1a2e;
+  }
+
+  .btn-primary:hover { background: #ffda44; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid #444;
+  }
+
+  .btn-secondary:hover { background: #1a4a7a; }
+
+  .btn-small {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-danger {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-danger:hover { background: #ff5a75; }
+
+  /* ===== GAME SCREEN ===== */
+  #gameScreen {
+    display: none;
+    height: 100vh;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1.5rem;
+    background: var(--bg2);
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+  }
+
+  .game-header h1 {
+    font-size: 1.3rem;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+  }
+
+  .phase-info {
+    text-align: center;
+  }
+
+  .phase-info .player-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .phase-info .phase-text {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+
+  .header-btns { display: flex; gap: 0.5rem; }
+
+  /* Main Layout */
+  .game-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Board */
+  .board-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    min-width: 0;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: 30px repeat(12, 1fr);
+    grid-template-rows: 30px repeat(9, 1fr);
+    gap: 2px;
+    width: 100%;
+    max-width: 780px;
+    aspect-ratio: 13/10;
+    background: var(--board-bg);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .board-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+
+  .board-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cell-empty);
+    border-radius: 3px;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    cursor: default;
+    transition: all 0.15s;
+    user-select: none;
+    position: relative;
+  }
+
+  .board-cell.placed {
+    background: var(--cell-placed);
+    color: #aaa;
+  }
+
+  .board-cell.playable {
+    cursor: pointer;
+    border: 2px solid var(--gold);
+    background: #3a3a2a;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .board-cell.playable:hover {
+    background: #4a4a3a;
+    transform: scale(1.05);
+    z-index: 1;
+  }
+
+  .board-cell.corp {
+    color: white;
+    font-weight: 600;
+  }
+
+  .board-cell.corp.safe-corp::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 10px 10px 0;
+    border-color: transparent rgba(255,255,255,0.6) transparent transparent;
+  }
+
+  .board-cell.dead-tile-highlight {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--cell-empty),
+      var(--cell-empty) 3px,
+      rgba(245,197,24,0.25) 3px,
+      rgba(245,197,24,0.25) 6px
+    );
+    border: 1px solid rgba(245,197,24,0.4);
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* Right Panel */
+  .side-panel {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-left: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .panel-section {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid #2a2a3a;
+  }
+
+  .panel-section h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 0.6rem;
+  }
+
+  /* Player Cards */
+  .player-card {
+    padding: 0.5rem 0.7rem;
+    border-radius: 6px;
+    margin-bottom: 0.4rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid transparent;
+  }
+
+  .player-card.active {
+    border-color: var(--gold);
+    background: rgba(245,197,24,0.08);
+  }
+
+  .player-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+  }
+
+  .player-card-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .player-card-cash {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .player-stocks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .stock-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    color: white;
+    font-weight: 600;
+  }
+
+  /* Corporation Info */
+  .corp-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    font-size: 0.85rem;
+  }
+
+  .corp-name-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .corp-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .corp-detail {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+
+  /* Bottom Bar - Tile Rack & Actions */
+  .bottom-bar {
+    background: var(--bg2);
+    border-top: 1px solid #333;
+    padding: 0.8rem 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .tile-rack {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .tile-rack-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-right: 0.5rem;
+  }
+
+  .tile {
+    width: 60px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #3a3a5a;
+    border: 2px solid #555;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+
+  .tile:hover:not(.dead) { border-color: var(--gold); background: #4a4a3a; }
+  .tile.selected { border-color: var(--gold); background: #4a4a1a; color: var(--gold); }
+  .tile.dead {
+    cursor: not-allowed;
+    border-color: rgba(245,197,24,0.5);
+    color: var(--gold);
+    background: repeating-linear-gradient(
+      45deg,
+      #2a2a3a,
+      #2a2a3a 3px,
+      rgba(245,197,24,0.18) 3px,
+      rgba(245,197,24,0.18) 6px
+    );
+    opacity: 0.7;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  /* ===== MODALS ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 550px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .modal h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: var(--gold);
+  }
+
+  .modal p {
+    margin-bottom: 1rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .corp-choice-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .corp-tier-group {
+    margin-bottom: 0.5rem;
+    width: 100%;
+  }
+
+  .corp-tier-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid #333;
+  }
+
+  .corp-tier-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+  }
+
+  .corp-tier-row .corp-choice-btn {
+    flex: 1;
+  }
+
+  .corp-choice-btn {
+    padding: 0.6rem 1.2rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .corp-choice-btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
+
+  /* Stock Purchase Modal */
+  .stock-purchase-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #2a2a3a;
+  }
+
+  .stock-purchase-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .stock-purchase-controls button {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background: var(--bg3);
+    color: var(--text);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stock-purchase-controls button:hover:not(:disabled) { background: #1a4a7a; }
+  .stock-purchase-controls button:disabled { opacity: 0.3; cursor: not-allowed; background: #222; border-color: #333; }
+  .stock-purchase-controls button { position: relative; }
+
+  /* JS tooltip */
+  .tooltip-popup {
+    position: fixed;
+    background: #111;
+    color: #ccc;
+    padding: 0.4rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 999;
+    pointer-events: none;
+    border: 1px solid #444;
+    transform: translate(-50%, -110%);
+  }
+
+  /* Merger summary modal */
+  .merger-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .merger-summary-table th, .merger-summary-table td {
+    padding: 0.5rem 0.8rem;
+    text-align: left;
+    border-bottom: 1px solid #333;
+  }
+  .merger-summary-table th {
+    color: var(--gold);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+  }
+  .merger-summary-table .bonus-positive {
+    color: #4CAF50;
+    font-weight: 700;
+  }
+
+  .stock-purchase-count {
+    width: 30px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .purchase-total {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  /* Merger Dispose Modal */
+  .dispose-controls {
+    margin: 1rem 0;
+  }
+
+  .dispose-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+  }
+
+  .dispose-row label {
+    font-size: 0.95rem;
+  }
+
+  /* Price Chart Modal */
+  .price-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .price-table th, .price-table td {
+    padding: 0.4rem 0.6rem;
+    text-align: center;
+    border: 1px solid #333;
+  }
+
+  .price-table th {
+    background: var(--bg3);
+    color: var(--gold);
+    font-size: 0.75rem;
+  }
+
+  .price-table td { color: var(--text-dim); }
+
+  /* Turn banner */
+  .turn-banner {
+    background: linear-gradient(90deg, rgba(245,197,24,0.15) 0%, rgba(245,197,24,0.05) 100%);
+    border-bottom: 2px solid var(--gold);
+    padding: 0.5rem 1.5rem;
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--gold);
+    flex-shrink: 0;
+    animation: bannerPulse 0.4s ease-out;
+  }
+
+  .turn-banner .turn-phase {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--text-dim);
+    margin-left: 1rem;
+  }
+
+  @keyframes bannerPulse {
+    0% { background-color: rgba(245,197,24,0.35); }
+    100% { background-color: transparent; }
+  }
+
+  /* Game Log */
+  .game-log {
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .game-log .log-entry {
+    padding: 0.2rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .game-log .log-entry:last-child { border: none; }
+
+  /* End game screen */
+  .final-scores {
+    width: 100%;
+  }
+
+  .final-score-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem;
+    border-bottom: 1px solid #333;
+    font-size: 1.1rem;
+  }
+
+  .final-score-row.winner {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  .final-score-row .rank {
+    width: 30px;
+    color: var(--text-dim);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .side-panel { width: 260px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HOME SCREEN ===== -->
+<div id="homeScreen">
+  <div class="home-title">ACQUIRE</div>
+  <div class="home-subtitle">The Classic Board Game of High Finance</div>
+  <div class="player-inputs">
+    <div class="player-input-row">
+      <label>Player 1</label>
+      <input type="text" id="p1name" placeholder="Enter name..." maxlength="15" value="Alice">
+    </div>
+    <div class="player-input-row">
+      <label>Player 2</label>
+      <input type="text" id="p2name" placeholder="Enter name..." maxlength="15" value="Bob">
+    </div>
+    <div class="player-input-row">
+      <label>Player 3</label>
+      <input type="text" id="p3name" placeholder="Enter name..." maxlength="15" value="Carol">
+    </div>
+    <div class="player-input-row">
+      <label>Player 4</label>
+      <input type="text" id="p4name" placeholder="Enter name..." maxlength="15" value="Dave">
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="startGame()">Start Game</button>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="gameScreen">
+  <!-- Turn Banner -->
+  <div class="turn-banner" id="turnBanner"></div>
+  <!-- Header -->
+  <div class="game-header">
+    <h1>ACQUIRE</h1>
+    <div class="phase-info">
+      <div class="player-name" id="currentPlayerName"></div>
+      <div class="phase-text" id="currentPhaseText"></div>
+    </div>
+    <div class="header-btns">
+      <button class="btn btn-secondary btn-small" onclick="showPriceChart()">Price Chart</button>
+      <button class="btn btn-secondary btn-small" onclick="checkEndGame()">End Game</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="game-main">
+    <!-- Board -->
+    <div class="board-container">
+      <div class="board" id="board"></div>
+    </div>
+
+    <!-- Side Panel -->
+    <div class="side-panel">
+      <div class="panel-section">
+        <h3>Players</h3>
+        <div id="playerCards"></div>
+      </div>
+      <div class="panel-section">
+        <h3>Corporations</h3>
+        <div id="corpInfo"></div>
+      </div>
+      <div class="panel-section">
+        <h3>Game Log</h3>
+        <div class="game-log" id="gameLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <div class="tile-rack" id="tileRack"></div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+<!-- Found Corporation Modal -->
+<div class="modal-overlay" id="foundCorpModal">
+  <div class="modal">
+    <h2>Found a Corporation</h2>
+    <p>Your tile created a new group! Choose a corporation to found:</p>
+    <div class="corp-choice-grid" id="foundCorpChoices"></div>
+  </div>
+</div>
+
+<!-- Merger Survivor Modal -->
+<div class="modal-overlay" id="mergerSurvivorModal">
+  <div class="modal">
+    <h2>Merger — Choose Survivor</h2>
+    <p id="mergerSurvivorText"></p>
+    <div class="corp-choice-grid" id="mergerSurvivorChoices"></div>
+  </div>
+</div>
+
+<!-- Merger Summary Modal -->
+<div class="modal-overlay" id="mergerSummaryModal">
+  <div class="modal" style="max-width:600px;">
+    <h2 id="mergerSummaryTitle">Merger Summary</h2>
+    <div id="mergerSummaryContent"></div>
+    <button class="btn btn-primary" style="margin-top:1rem;" onclick="dismissMergerSummary()">Continue to Stock Disposition</button>
+  </div>
+</div>
+
+<!-- Merger Dispose Modal -->
+<div class="modal-overlay" id="mergerDisposeModal">
+  <div class="modal">
+    <h2 id="disposeTitle">Dispose of Stock</h2>
+    <p id="disposeText"></p>
+    <div class="dispose-controls" id="disposeControls"></div>
+    <button class="btn btn-primary" onclick="confirmDispose()">Confirm</button>
+  </div>
+</div>
+
+<!-- Stock Purchase Modal -->
+<div class="modal-overlay" id="stockPurchaseModal">
+  <div class="modal">
+    <h2>Buy Stocks</h2>
+    <p>You may buy up to 3 shares total. Current cash: <span id="purchaseCash"></span></p>
+    <div id="stockPurchaseRows"></div>
+    <div class="purchase-total">
+      <span>Total Cost:</span>
+      <span id="purchaseTotalCost">$0</span>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+      <button class="btn btn-primary" onclick="confirmPurchase()">Buy</button>
+      <button class="btn btn-secondary" onclick="confirmPurchase()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- Price Chart Modal -->
+<div class="modal-overlay" id="priceChartModal" onclick="closePriceChart(event)">
+  <div class="modal" style="max-width:650px;">
+    <h2>Stock Price Chart</h2>
+    <table class="price-table" id="priceTable"></table>
+    <div style="margin-top:1rem;">
+      <p style="font-size:0.8rem;">Majority Bonus = 10 × stock price &nbsp;|&nbsp; Minority Bonus = 5 × stock price</p>
+    </div>
+  </div>
+</div>
+
+<!-- Game Over Modal -->
+<div class="modal-overlay" id="gameOverModal">
+  <div class="modal" style="text-align:center;">
+    <h2>Game Over!</h2>
+    <div class="final-scores" id="finalScores"></div>
+    <button class="btn btn-primary" style="margin-top:1.5rem;" onclick="location.reload()">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+const ROWS = 9;
+const COLS = 12;
+const ROW_LABELS = 'ABCDEFGHI'.split('');
+const STARTING_CASH = 6000;
+const TILES_PER_PLAYER = 6;
+const MAX_STOCK_PER_CORP = 25;
+const MAX_BUY_PER_TURN = 3;
+const SAFE_SIZE = 11;
+const END_SIZE = 41;
+
+const CORPORATIONS = [
+  { id: 'sackson',     name: 'Sackson',     tier: 0, color: 'var(--corp-sackson)' },
+  { id: 'zeta',        name: 'Zeta',        tier: 0, color: 'var(--corp-zeta)' },
+  { id: 'america',     name: 'America',     tier: 1, color: 'var(--corp-america)' },
+  { id: 'fusion',      name: 'Fusion',      tier: 1, color: 'var(--corp-fusion)' },
+  { id: 'worldwide',   name: 'Worldwide',   tier: 1, color: 'var(--corp-worldwide)' },
+  { id: 'phoenix',     name: 'Phoenix',     tier: 2, color: 'var(--corp-phoenix)' },
+  { id: 'continental', name: 'Continental', tier: 2, color: 'var(--corp-continental)' },
+];
+
+// Price table: [tier][sizeIndex] → price
+// Size indices: 0=2tiles, 1=3, 2=4, 3=5, 4=6-10, 5=11-20, 6=21-30, 7=31-40, 8=41+
+const BASE_PRICES = [200, 300, 400, 500, 600, 700, 800, 900, 1000];
+const TIER_BONUS =  [0, 100, 200];
+
+function sizeToIndex(size) {
+  if (size <= 1) return -1;
+  if (size <= 5) return size - 2;
+  if (size <= 10) return 4;
+  if (size <= 20) return 5;
+  if (size <= 30) return 6;
+  if (size <= 40) return 7;
+  return 8;
+}
+
+function getStockPrice(corpId, size) {
+  if (size < 2) return 0;
+  const corp = CORPORATIONS.find(c => c.id === corpId);
+  const idx = sizeToIndex(size);
+  return BASE_PRICES[idx] + TIER_BONUS[corp.tier];
+}
+
+function getMajorityBonus(corpId, size) { return getStockPrice(corpId, size) * 10; }
+function getMinorityBonus(corpId, size) { return getStockPrice(corpId, size) * 5; }
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let G = {}; // global game state
+
+function initState(names) {
+  // Build tile bag
+  const allTiles = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      allTiles.push({ row: r, col: c, id: `${c+1}${ROW_LABELS[r]}` });
+    }
+  }
+  shuffle(allTiles);
+
+  const players = names.map((name, i) => ({
+    name,
+    index: i,
+    cash: STARTING_CASH,
+    stocks: {}, // corpId → count
+    tiles: [],
+  }));
+
+  // Deal tiles
+  for (const p of players) {
+    for (let i = 0; i < TILES_PER_PLAYER; i++) {
+      p.tiles.push(allTiles.pop());
+    }
+  }
+
+  // Board: 2D array, each cell = { placed: bool, corp: null|corpId }
+  const board = [];
+  for (let r = 0; r < ROWS; r++) {
+    board[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      board[r][c] = { placed: false, corp: null };
+    }
+  }
+
+  // Corporation state
+  const corps = {};
+  for (const c of CORPORATIONS) {
+    corps[c.id] = { active: false, tiles: [], safe: false };
+  }
+
+  G = {
+    board,
+    corps,
+    players,
+    tileBag: allTiles,
+    currentPlayer: 0,
+    phase: 'PLACE_TILE', // PLACE_TILE, FOUND_CORP, MERGER_SURVIVOR, MERGER_DISPOSE, BUY_STOCK, GAME_OVER
+    log: [],
+    // Merger state
+    merger: null,
+    // Founding state
+    founding: null,
+    firstTurn: true,
+  };
+}
+
+// ============================================================
+// UTILITY
+// ============================================================
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function tileId(r, c) { return `${c+1}${ROW_LABELS[r]}`; }
+
+function getAdjacentCells(r, c) {
+  const adj = [];
+  if (r > 0) adj.push({ row: r-1, col: c });
+  if (r < ROWS-1) adj.push({ row: r+1, col: c });
+  if (c > 0) adj.push({ row: r, col: c-1 });
+  if (c < COLS-1) adj.push({ row: r, col: c+1 });
+  return adj;
+}
+
+function getAdjacentCorps(r, c) {
+  const corps = new Set();
+  for (const a of getAdjacentCells(r, c)) {
+    const cell = G.board[a.row][a.col];
+    if (cell.placed && cell.corp) corps.add(cell.corp);
+  }
+  return [...corps];
+}
+
+function getAdjacentPlacedNoCorp(r, c) {
+  const cells = [];
+  for (const a of getAdjacentCells(r, c)) {
+    const cell = G.board[a.row][a.col];
+    if (cell.placed && !cell.corp) cells.push(a);
+  }
+  return cells;
+}
+
+function corpSize(corpId) {
+  return G.corps[corpId].tiles.length;
+}
+
+function playerStocks(playerIdx, corpId) {
+  return G.players[playerIdx].stocks[corpId] || 0;
+}
+
+function totalStocksIssued(corpId) {
+  let total = 0;
+  for (const p of G.players) total += (p.stocks[corpId] || 0);
+  return total;
+}
+
+function stocksAvailable(corpId) {
+  return MAX_STOCK_PER_CORP - totalStocksIssued(corpId);
+}
+
+function addLog(msg) {
+  G.log.push(msg);
+  renderLog();
+}
+
+function currentPlayer() { return G.players[G.currentPlayer]; }
+
+// ============================================================
+// TILE PLACEMENT LOGIC
+// ============================================================
+function isTileDead(tile) {
+  // A tile is dead if placing it would ONLY merge safe corporations
+  // (i.e., it's adjacent to 2+ different safe corps)
+  const adjCorps = getAdjacentCorps(tile.row, tile.col);
+  if (adjCorps.length < 2) return false;
+  const safeCorps = adjCorps.filter(cid => G.corps[cid].tiles.length >= SAFE_SIZE);
+  // Dead if ALL adjacent corps are safe and there are 2+ of them
+  // Actually: dead if it would merge any two safe corps
+  if (safeCorps.length >= 2) return true;
+  return false;
+}
+
+function replaceTile(playerIdx, tileIdx) {
+  if (G.tileBag.length === 0) return;
+  G.players[playerIdx].tiles[tileIdx] = G.tileBag.pop();
+}
+
+function replaceDeadTiles(playerIdx) {
+  const p = G.players[playerIdx];
+  for (let i = 0; i < p.tiles.length; i++) {
+    if (p.tiles[i] && isTileDead(p.tiles[i])) {
+      const oldTile = p.tiles[i];
+      if (G.tileBag.length > 0) {
+        p.tiles[i] = G.tileBag.pop();
+        addLog(`${p.name} replaced dead tile ${oldTile.id}`);
+      }
+    }
+  }
+}
+
+function canPlaceTile(playerIdx) {
+  const p = G.players[playerIdx];
+  return p.tiles.some(t => t && !isTileDead(t));
+}
+
+function placeTile(tile) {
+  const { row, col } = tile;
+  G.board[row][col] = { placed: true, corp: null };
+
+  const adjCorps = getAdjacentCorps(row, col);
+  const uniqueCorps = [...new Set(adjCorps)];
+  const adjPlacedNoCorp = getAdjacentPlacedNoCorp(row, col);
+
+  if (uniqueCorps.length === 0) {
+    // No adjacent corporations
+    if (adjPlacedNoCorp.length > 0) {
+      // Adjacent to unincorporated tiles → found a new corporation
+      const availableCorps = CORPORATIONS.filter(c => !G.corps[c.id].active);
+      if (availableCorps.length === 0) {
+        // No corps available, tile just sits unincorporated
+        addLog(`${currentPlayer().name} placed ${tile.id} (no corporations available to found)`);
+        return 'BUY_STOCK';
+      }
+      G.founding = { row, col, adjacentCells: adjPlacedNoCorp };
+      addLog(`${currentPlayer().name} placed ${tile.id} — founding a corporation!`);
+      return 'FOUND_CORP';
+    }
+    // Isolated tile
+    addLog(`${currentPlayer().name} placed ${tile.id}`);
+    return 'BUY_STOCK';
+  }
+
+  if (uniqueCorps.length === 1) {
+    // Grow existing corporation
+    const corpId = uniqueCorps[0];
+    assignTileToCorp(row, col, corpId);
+    // Also assign any adjacent unincorporated tiles
+    for (const a of adjPlacedNoCorp) {
+      assignTileToCorp(a.row, a.col, corpId);
+    }
+    // Flood fill to pick up chains of unincorporated tiles
+    floodFillCorp(corpId);
+    addLog(`${currentPlayer().name} placed ${tile.id} — ${CORPORATIONS.find(c=>c.id===corpId).name} grows to ${corpSize(corpId)}`);
+    return 'BUY_STOCK';
+  }
+
+  // Multiple corps → MERGER
+  return initMerger(row, col, uniqueCorps, adjPlacedNoCorp);
+}
+
+function assignTileToCorp(row, col, corpId) {
+  G.board[row][col].corp = corpId;
+  const tiles = G.corps[corpId].tiles;
+  if (!tiles.find(t => t.row === row && t.col === col)) {
+    tiles.push({ row, col });
+  }
+  G.corps[corpId].safe = tiles.length >= SAFE_SIZE;
+}
+
+function floodFillCorp(corpId) {
+  // Ensure all tiles connected to this corp's tiles are assigned to it
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const t of [...G.corps[corpId].tiles]) {
+      for (const a of getAdjacentCells(t.row, t.col)) {
+        const cell = G.board[a.row][a.col];
+        if (cell.placed && !cell.corp) {
+          assignTileToCorp(a.row, a.col, corpId);
+          changed = true;
+        }
+      }
+    }
+  }
+}
+
+// ============================================================
+// FOUNDING
+// ============================================================
+function foundCorporation(corpId) {
+  const { row, col, adjacentCells } = G.founding;
+  G.corps[corpId].active = true;
+  assignTileToCorp(row, col, corpId);
+  for (const a of adjacentCells) {
+    assignTileToCorp(a.row, a.col, corpId);
+  }
+  floodFillCorp(corpId);
+
+  // Founder gets a free stock if available
+  const p = currentPlayer();
+  if (stocksAvailable(corpId) > 0) {
+    p.stocks[corpId] = (p.stocks[corpId] || 0) + 1;
+    addLog(`${p.name} founded ${CORPORATIONS.find(c=>c.id===corpId).name} and received a free share!`);
+  } else {
+    addLog(`${p.name} founded ${CORPORATIONS.find(c=>c.id===corpId).name} (no shares available)`);
+  }
+
+  G.founding = null;
+  G.phase = 'BUY_STOCK';
+  showStockPurchase();
+}
+
+// ============================================================
+// MERGER
+// ============================================================
+function initMerger(row, col, involvedCorps, adjPlacedNoCorp) {
+  // Sort by size descending, then by tier descending for tiebreaker display
+  const sorted = involvedCorps.map(cid => ({
+    id: cid,
+    size: corpSize(cid),
+    name: CORPORATIONS.find(c => c.id === cid).name
+  })).sort((a, b) => b.size - a.size);
+
+  const maxSize = sorted[0].size;
+  const largest = sorted.filter(c => c.size === maxSize);
+
+  G.merger = {
+    row, col,
+    involvedCorps: sorted,
+    adjPlacedNoCorp,
+    survivor: null,
+    defunctQueue: [],      // corps to process, in order
+    currentDefunct: null,
+    disposePlayerQueue: [], // players who need to dispose stock
+    currentDisposePlayer: null,
+    bonusLog: [],           // tracks bonuses for the summary popup
+    needsSummary: true,     // flag to show summary before dispose
+  };
+
+  if (largest.length === 1) {
+    // Clear survivor
+    G.merger.survivor = largest[0].id;
+    addLog(`Merger! ${largest[0].name} (${largest[0].size} tiles) acquires ${sorted.filter(c=>c.id!==largest[0].id).map(c=>c.name).join(', ')}`);
+    setupDefunctQueue();
+    return processNextDefunct();
+  } else {
+    // Tie - active player chooses
+    addLog(`Merger tie! ${largest.map(c=>c.name).join(' & ')} both have ${maxSize} tiles. ${currentPlayer().name} chooses survivor.`);
+    return 'MERGER_SURVIVOR';
+  }
+}
+
+function chooseMergerSurvivor(corpId) {
+  G.merger.survivor = corpId;
+  addLog(`${currentPlayer().name} chose ${CORPORATIONS.find(c=>c.id===corpId).name} as the surviving corporation.`);
+  setupDefunctQueue();
+  const result = processNextDefunct();
+  G.phase = result;
+  renderAll();
+  // Summary modal is shown inside processNextDefunct, user will click Continue
+  if (result === 'BUY_STOCK') {
+    showStockPurchase();
+  }
+}
+
+function setupDefunctQueue() {
+  // Order: largest defunct first. If tied, active player already resolved via survivor choice.
+  G.merger.defunctQueue = G.merger.involvedCorps
+    .filter(c => c.id !== G.merger.survivor)
+    .sort((a, b) => b.size - a.size);
+}
+
+function processNextDefunct() {
+  if (G.merger.defunctQueue.length === 0) {
+    // All defunct corps processed — finalize merger
+    finalizeMerger();
+    return 'BUY_STOCK';
+  }
+
+  const defunct = G.merger.defunctQueue.shift();
+  G.merger.currentDefunct = defunct.id;
+
+  // Pay majority/minority bonuses (this also populates bonusLog)
+  G.merger.bonusLog = [];
+  payMergerBonuses(defunct.id);
+
+  // Build player dispose queue: starting with merger-causing player, clockwise
+  const disposeOrder = [];
+  for (let i = 0; i < G.players.length; i++) {
+    const pIdx = (G.currentPlayer + i) % G.players.length;
+    if (playerStocks(pIdx, defunct.id) > 0) {
+      disposeOrder.push(pIdx);
+    }
+  }
+
+  G.merger.disposePlayerQueue = disposeOrder;
+
+  // Show merger summary popup first
+  showMergerSummary(defunct);
+
+  return 'MERGER_DISPOSE'; // will wait on summary modal first
+}
+
+function processNextDisposePlayer() {
+  if (G.merger.disposePlayerQueue.length === 0) {
+    return processNextDefunct();
+  }
+
+  G.merger.currentDisposePlayer = G.merger.disposePlayerQueue.shift();
+  return 'MERGER_DISPOSE';
+}
+
+function payMergerBonuses(defunctId) {
+  const size = corpSize(defunctId);
+  const majBonus = getMajorityBonus(defunctId, size);
+  const minBonus = getMinorityBonus(defunctId, size);
+  const corpName = CORPORATIONS.find(c => c.id === defunctId).name;
+
+  // Find majority and minority holders
+  let holdings = G.players.map((p, i) => ({ idx: i, shares: playerStocks(i, defunctId) }))
+    .filter(h => h.shares > 0)
+    .sort((a, b) => b.shares - a.shares);
+
+  if (holdings.length === 0) return;
+
+  if (holdings.length === 1) {
+    // Solo holder gets both
+    const bonus = majBonus + minBonus;
+    G.players[holdings[0].idx].cash += bonus;
+    addLog(`${G.players[holdings[0].idx].name} receives $${bonus} (sole shareholder bonus) for ${corpName}`);
+    if (G.merger) G.merger.bonusLog.push({ name: G.players[holdings[0].idx].name, shares: holdings[0].shares, role: 'Sole Shareholder', bonus });
+    return;
+  }
+
+  const maxShares = holdings[0].shares;
+  const majorityHolders = holdings.filter(h => h.shares === maxShares);
+
+  if (majorityHolders.length > 1) {
+    // Tie for majority: split majority+minority among all tied
+    const totalBonus = majBonus + minBonus;
+    const perPlayer = Math.ceil(totalBonus / majorityHolders.length / 100) * 100;
+    for (const h of majorityHolders) {
+      G.players[h.idx].cash += perPlayer;
+      addLog(`${G.players[h.idx].name} receives $${perPlayer} (split majority+minority) for ${corpName}`);
+      if (G.merger) G.merger.bonusLog.push({ name: G.players[h.idx].name, shares: h.shares, role: 'Tied Majority', bonus: perPlayer });
+    }
+  } else {
+    // Clear majority holder
+    G.players[majorityHolders[0].idx].cash += majBonus;
+    addLog(`${G.players[majorityHolders[0].idx].name} receives $${majBonus} (majority bonus) for ${corpName}`);
+    if (G.merger) G.merger.bonusLog.push({ name: G.players[majorityHolders[0].idx].name, shares: majorityHolders[0].shares, role: 'Majority', bonus: majBonus });
+
+    // Find minority
+    const remaining = holdings.filter(h => h.shares < maxShares);
+    if (remaining.length > 0) {
+      const nextMax = remaining[0].shares;
+      const minorityHolders = remaining.filter(h => h.shares === nextMax);
+      const perPlayer = Math.ceil(minBonus / minorityHolders.length / 100) * 100;
+      for (const h of minorityHolders) {
+        G.players[h.idx].cash += perPlayer;
+        addLog(`${G.players[h.idx].name} receives $${perPlayer} (minority bonus) for ${corpName}`);
+        if (G.merger) G.merger.bonusLog.push({ name: G.players[h.idx].name, shares: h.shares, role: 'Minority', bonus: perPlayer });
+      }
+    }
+  }
+}
+
+function confirmDispose() {
+  const pIdx = G.merger.currentDisposePlayer;
+  const defunctId = G.merger.currentDefunct;
+  const survivorId = G.merger.survivor;
+  const player = G.players[pIdx];
+  const held = playerStocks(pIdx, defunctId);
+  const corpName = CORPORATIONS.find(c => c.id === defunctId).name;
+  const survName = CORPORATIONS.find(c => c.id === survivorId).name;
+
+  // Read values from modal
+  const sellCount = parseInt(document.getElementById('disposeSell').value) || 0;
+  const tradeCount = parseInt(document.getElementById('disposeTrade').value) || 0;
+  const keepCount = held - sellCount - tradeCount;
+
+  // Validate
+  if (sellCount + tradeCount > held || keepCount < 0) {
+    alert('Invalid: sell + trade exceeds your holdings');
+    return;
+  }
+  if (tradeCount % 2 !== 0) {
+    alert('Trade count must be even (2 defunct → 1 survivor)');
+    return;
+  }
+  const survivorGain = tradeCount / 2;
+  if (survivorGain > stocksAvailable(survivorId)) {
+    alert(`Only ${stocksAvailable(survivorId)} ${survName} shares available for trade`);
+    return;
+  }
+
+  // Execute
+  if (sellCount > 0) {
+    const price = getStockPrice(defunctId, corpSize(defunctId));
+    player.cash += sellCount * price;
+    player.stocks[defunctId] -= sellCount;
+    addLog(`${player.name} sold ${sellCount} ${corpName} shares for $${sellCount * price}`);
+  }
+  if (tradeCount > 0) {
+    player.stocks[defunctId] -= tradeCount;
+    player.stocks[survivorId] = (player.stocks[survivorId] || 0) + survivorGain;
+    addLog(`${player.name} traded ${tradeCount} ${corpName} for ${survivorGain} ${survName}`);
+  }
+  if (keepCount > 0) {
+    addLog(`${player.name} kept ${keepCount} ${corpName} shares`);
+  }
+
+  // Clean up zero stocks
+  if (player.stocks[defunctId] <= 0) delete player.stocks[defunctId];
+
+  document.getElementById('mergerDisposeModal').classList.remove('show');
+
+  // Next player or next defunct
+  const result = processNextDisposePlayer();
+  G.phase = result;
+  renderAll();
+  if (result === 'MERGER_DISPOSE') {
+    showDisposeModal();
+  } else if (result === 'BUY_STOCK') {
+    showStockPurchase();
+  }
+}
+
+function finalizeMerger() {
+  const { row, col, survivor, adjPlacedNoCorp } = G.merger;
+
+  // Transfer all defunct tiles to survivor
+  for (const corpInfo of G.merger.involvedCorps) {
+    if (corpInfo.id === survivor) continue;
+    const defunctId = corpInfo.id;
+    for (const t of G.corps[defunctId].tiles) {
+      assignTileToCorp(t.row, t.col, survivor);
+    }
+    // Deactivate defunct
+    G.corps[defunctId].active = false;
+    G.corps[defunctId].tiles = [];
+    G.corps[defunctId].safe = false;
+  }
+
+  // Assign the placed tile and any unincorporated adjacent
+  assignTileToCorp(row, col, survivor);
+  for (const a of adjPlacedNoCorp) {
+    assignTileToCorp(a.row, a.col, survivor);
+  }
+  floodFillCorp(survivor);
+
+  addLog(`Merger complete. ${CORPORATIONS.find(c=>c.id===survivor).name} now has ${corpSize(survivor)} tiles.`);
+  G.merger = null;
+}
+
+// ============================================================
+// STOCK PURCHASING
+// ============================================================
+let purchaseSelections = {};
+
+function showStockPurchase() {
+  const p = currentPlayer();
+  purchaseSelections = {};
+
+  const activeCorps = CORPORATIONS.filter(c => G.corps[c.id].active);
+  if (activeCorps.length === 0) {
+    // No active corps, skip buying
+    endTurn();
+    return;
+  }
+
+  document.getElementById('purchaseCash').textContent = `$${p.cash}`;
+
+  const container = document.getElementById('stockPurchaseRows');
+  container.innerHTML = '';
+
+  for (const corp of activeCorps) {
+    const price = getStockPrice(corp.id, corpSize(corp.id));
+    const avail = stocksAvailable(corp.id);
+    purchaseSelections[corp.id] = 0;
+
+    const row = document.createElement('div');
+    row.className = 'stock-purchase-row';
+    row.innerHTML = `
+      <div>
+        <span class="corp-dot" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${corp.color};margin-right:6px;vertical-align:middle;"></span>
+        <strong>${corp.name}</strong>
+        <span style="color:var(--text-dim);font-size:0.85rem;"> — $${price}/share (${avail} avail)</span>
+      </div>
+      <div class="stock-purchase-controls">
+        <button id="purchaseMinus_${corp.id}" onclick="adjustPurchase('${corp.id}', -1)">−</button>
+        <span class="stock-purchase-count" id="purchase_${corp.id}">0</span>
+        <button id="purchasePlus_${corp.id}" onclick="adjustPurchase('${corp.id}', 1)">+</button>
+      </div>
+    `;
+    container.appendChild(row);
+  }
+
+  updatePurchaseTotal();
+  updatePurchaseButtons();
+  document.getElementById('stockPurchaseModal').classList.add('show');
+  G.phase = 'BUY_STOCK';
+  renderAll();
+}
+
+function adjustPurchase(corpId, delta) {
+  const p = currentPlayer();
+  const newVal = (purchaseSelections[corpId] || 0) + delta;
+  if (newVal < 0) return;
+
+  const totalBought = Object.values(purchaseSelections).reduce((s, v) => s + v, 0) - purchaseSelections[corpId] + newVal;
+  if (totalBought > MAX_BUY_PER_TURN) return;
+
+  if (newVal > stocksAvailable(corpId)) return;
+
+  // Check if player can afford
+  purchaseSelections[corpId] = newVal;
+  const totalCost = calcPurchaseCost();
+  if (totalCost > p.cash) {
+    purchaseSelections[corpId] = newVal - delta;
+    return;
+  }
+
+  document.getElementById(`purchase_${corpId}`).textContent = newVal;
+  updatePurchaseTotal();
+  updatePurchaseButtons();
+}
+
+function updatePurchaseButtons() {
+  const p = currentPlayer();
+  const totalBought = Object.values(purchaseSelections).reduce((s, v) => s + v, 0);
+  const currentCost = calcPurchaseCost();
+  const activeCorps = CORPORATIONS.filter(c => G.corps[c.id].active);
+
+  for (const corp of activeCorps) {
+    const plusBtn = document.getElementById(`purchasePlus_${corp.id}`);
+    const minusBtn = document.getElementById(`purchaseMinus_${corp.id}`);
+    if (!plusBtn || !minusBtn) continue;
+
+    // Minus button
+    if ((purchaseSelections[corp.id] || 0) <= 0) {
+      minusBtn.disabled = true;
+      minusBtn.removeAttribute('data-tooltip');
+    } else {
+      minusBtn.disabled = false;
+    }
+
+    // Plus button - check all reasons it might be disabled
+    const price = getStockPrice(corp.id, corpSize(corp.id));
+    const avail = stocksAvailable(corp.id);
+    const currentCount = purchaseSelections[corp.id] || 0;
+
+    if (totalBought >= MAX_BUY_PER_TURN) {
+      plusBtn.disabled = true;
+      plusBtn.setAttribute('data-tooltip', 'Already selected 3 shares this turn');
+    } else if (currentCost + price > p.cash) {
+      plusBtn.disabled = true;
+      plusBtn.setAttribute('data-tooltip', `Not enough cash (need $${price})`);
+    } else if (currentCount >= avail) {
+      plusBtn.disabled = true;
+      plusBtn.setAttribute('data-tooltip', 'No more shares available');
+    } else {
+      plusBtn.disabled = false;
+      plusBtn.removeAttribute('data-tooltip');
+    }
+  }
+}
+
+function calcPurchaseCost() {
+  let total = 0;
+  for (const [corpId, count] of Object.entries(purchaseSelections)) {
+    if (count > 0) {
+      total += count * getStockPrice(corpId, corpSize(corpId));
+    }
+  }
+  return total;
+}
+
+function updatePurchaseTotal() {
+  document.getElementById('purchaseTotalCost').textContent = `$${calcPurchaseCost()}`;
+}
+
+function confirmPurchase() {
+  const p = currentPlayer();
+  const totalCost = calcPurchaseCost();
+
+  for (const [corpId, count] of Object.entries(purchaseSelections)) {
+    if (count > 0) {
+      p.stocks[corpId] = (p.stocks[corpId] || 0) + count;
+      p.cash -= count * getStockPrice(corpId, corpSize(corpId));
+      const cname = CORPORATIONS.find(c => c.id === corpId).name;
+      addLog(`${p.name} bought ${count} ${cname} share${count>1?'s':''} for $${count * getStockPrice(corpId, corpSize(corpId))}`);
+    }
+  }
+
+  document.getElementById('stockPurchaseModal').classList.remove('show');
+  endTurn();
+}
+
+// ============================================================
+// TURN MANAGEMENT
+// ============================================================
+function endTurn() {
+  // Draw a tile
+  const p = currentPlayer();
+  const emptySlot = p.tiles.findIndex(t => t === null);
+  if (emptySlot >= 0 && G.tileBag.length > 0) {
+    p.tiles[emptySlot] = G.tileBag.pop();
+  }
+
+  // Check end game conditions
+  if (checkEndGameConditions()) {
+    endGame();
+    return;
+  }
+
+  // Advance to next player
+  G.currentPlayer = (G.currentPlayer + 1) % G.players.length;
+  G.phase = 'PLACE_TILE';
+
+  // Replace dead tiles for next player
+  replaceDeadTiles(G.currentPlayer);
+
+  // If player has no playable tiles and bag is empty, skip
+  if (!canPlaceTile(G.currentPlayer) && G.tileBag.length === 0) {
+    addLog(`${G.players[G.currentPlayer].name} has no playable tiles — skipping.`);
+    // Still allow buying
+    showStockPurchase();
+    return;
+  }
+
+  renderAll();
+}
+
+// ============================================================
+// END GAME
+// ============================================================
+function checkEndGameConditions() {
+  const activeCorps = CORPORATIONS.filter(c => G.corps[c.id].active);
+  if (activeCorps.length === 0) return false;
+
+  // Any corp with 41+ tiles
+  if (activeCorps.some(c => corpSize(c.id) >= END_SIZE)) return true;
+
+  // All active corps are safe
+  if (activeCorps.every(c => corpSize(c.id) >= SAFE_SIZE)) return true;
+
+  return false;
+}
+
+function checkEndGame() {
+  if (checkEndGameConditions()) {
+    if (confirm('End game conditions are met. End the game now?')) {
+      endGame();
+    }
+  } else {
+    alert('End game conditions are not yet met. Either all active corporations must be safe (11+ tiles) or one corporation must reach 41+ tiles.');
+  }
+}
+
+function endGame() {
+  G.phase = 'GAME_OVER';
+
+  // Sell all stocks at current prices, pay final bonuses
+  const activeCorps = CORPORATIONS.filter(c => G.corps[c.id].active);
+  for (const corp of activeCorps) {
+    payMergerBonuses(corp.id);
+    const price = getStockPrice(corp.id, corpSize(corp.id));
+    for (const p of G.players) {
+      const shares = playerStocks(p.index, corp.id);
+      if (shares > 0) {
+        p.cash += shares * price;
+        addLog(`${p.name} sold ${shares} ${corp.name} for $${shares * price}`);
+        p.stocks[corp.id] = 0;
+      }
+    }
+  }
+
+  // Show results
+  const sorted = [...G.players].sort((a, b) => b.cash - a.cash);
+  const container = document.getElementById('finalScores');
+  container.innerHTML = '';
+  sorted.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'final-score-row' + (i === 0 ? ' winner' : '');
+    row.innerHTML = `
+      <span class="rank">#${i+1}</span>
+      <span>${p.name}</span>
+      <span>$${p.cash.toLocaleString()}</span>
+    `;
+    container.appendChild(row);
+  });
+
+  addLog(`Game Over! ${sorted[0].name} wins with $${sorted[0].cash.toLocaleString()}!`);
+  document.getElementById('gameOverModal').classList.add('show');
+  renderAll();
+}
+
+// ============================================================
+// UI RENDERING
+// ============================================================
+function renderAll() {
+  renderTurnBanner();
+  renderBoard();
+  renderPlayerCards();
+  renderCorpInfo();
+  renderTileRack();
+  renderPhaseInfo();
+}
+
+function renderTurnBanner() {
+  const banner = document.getElementById('turnBanner');
+  if (G.phase === 'GAME_OVER') {
+    banner.style.display = 'none';
+    return;
+  }
+  const p = currentPlayer();
+  const phaseTexts = {
+    'PLACE_TILE': 'Place a tile',
+    'FOUND_CORP': 'Found a corporation',
+    'MERGER_SURVIVOR': 'Choose merger survivor',
+    'MERGER_DISPOSE': 'Dispose stock',
+    'BUY_STOCK': 'Buy stocks',
+  };
+  const phase = phaseTexts[G.phase] || '';
+  // Re-trigger the pulse animation
+  banner.style.animation = 'none';
+  banner.offsetHeight; // force reflow
+  banner.style.animation = '';
+  banner.innerHTML = `${p.name}'s Turn<span class="turn-phase">— ${phase}</span>`;
+}
+
+function renderBoard() {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+
+  // Corner
+  boardEl.appendChild(createDiv('board-label', ''));
+
+  // Column headers
+  for (let c = 0; c < COLS; c++) {
+    boardEl.appendChild(createDiv('board-label', String(c + 1)));
+  }
+
+  for (let r = 0; r < ROWS; r++) {
+    // Row label
+    boardEl.appendChild(createDiv('board-label', ROW_LABELS[r]));
+
+    for (let c = 0; c < COLS; c++) {
+      const cell = G.board[r][c];
+      const div = document.createElement('div');
+      div.className = 'board-cell';
+      div.textContent = tileId(r, c);
+
+      if (cell.placed) {
+        if (cell.corp) {
+          const corp = CORPORATIONS.find(co => co.id === cell.corp);
+          div.classList.add('corp');
+          div.style.background = corp.color;
+          const safe = G.corps[cell.corp].tiles.length >= SAFE_SIZE;
+          if (safe) {
+            div.classList.add('safe-corp');
+            div.title = corp.name + ' (Safe — cannot be acquired)';
+          } else {
+            div.title = corp.name;
+          }
+        } else {
+          div.classList.add('placed');
+        }
+      } else if (G.phase === 'PLACE_TILE') {
+        // Check if current player has this tile
+        const p = currentPlayer();
+        const heldTile = p.tiles.find(t => t && t.row === r && t.col === c);
+        if (heldTile) {
+          if (isTileDead(heldTile)) {
+            div.classList.add('dead-tile-highlight');
+            div.title = 'Unplayable — between two safe corporations. Will be recycled next turn.';
+          } else {
+            div.classList.add('playable');
+            div.onclick = () => handleTilePlacement(r, c);
+          }
+        }
+      }
+
+      boardEl.appendChild(div);
+    }
+  }
+}
+
+function createDiv(cls, text) {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = text;
+  return d;
+}
+
+function renderPlayerCards() {
+  const container = document.getElementById('playerCards');
+  container.innerHTML = '';
+  for (const p of G.players) {
+    const card = document.createElement('div');
+    card.className = 'player-card' + (p.index === G.currentPlayer ? ' active' : '');
+
+    let stocksHtml = '';
+    for (const corp of CORPORATIONS) {
+      const count = p.stocks[corp.id] || 0;
+      if (count > 0) {
+        stocksHtml += `<span class="stock-badge" style="background:${corp.color}">${corp.name.substring(0,3)} ${count}</span>`;
+      }
+    }
+
+    card.innerHTML = `
+      <div class="player-card-header">
+        <span class="player-card-name">${p.name}${p.index === G.currentPlayer ? ' ◀' : ''}</span>
+        <span class="player-card-cash">$${p.cash.toLocaleString()}</span>
+      </div>
+      <div class="player-stocks">${stocksHtml || '<span style="font-size:0.75rem;color:var(--text-dim);">No stocks</span>'}</div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+function renderCorpInfo() {
+  const container = document.getElementById('corpInfo');
+  container.innerHTML = '';
+  for (const corp of CORPORATIONS) {
+    const size = corpSize(corp.id);
+    const active = G.corps[corp.id].active;
+    const safe = size >= SAFE_SIZE;
+    const price = active ? getStockPrice(corp.id, size) : 0;
+    const avail = stocksAvailable(corp.id);
+
+    const row = document.createElement('div');
+    row.className = 'corp-row';
+    row.innerHTML = `
+      <div class="corp-name-badge">
+        <span class="corp-dot" style="background:${active ? corp.color : '#333'}"></span>
+        <span style="${active ? '' : 'color:var(--text-dim)'}">${corp.name}</span>
+        ${safe ? '<span style="font-size:0.65rem;color:var(--gold);background:rgba(245,197,24,0.15);padding:1px 5px;border-radius:3px;margin-left:2px;">SAFE</span>' : ''}
+      </div>
+      <span class="corp-detail">${active ? `${size} tiles · $${price} · ${avail} left` : 'Inactive'}</span>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function renderTileRack() {
+  const container = document.getElementById('tileRack');
+  container.innerHTML = '';
+
+  if (G.phase === 'GAME_OVER') {
+    container.innerHTML = '<span class="tile-rack-label">Game Over</span>';
+    return;
+  }
+
+  const p = currentPlayer();
+  const label = document.createElement('span');
+  label.className = 'tile-rack-label';
+  label.textContent = `${p.name}'s tiles:`;
+  container.appendChild(label);
+
+  for (let i = 0; i < p.tiles.length; i++) {
+    const tile = p.tiles[i];
+    if (!tile) continue;
+    const div = document.createElement('div');
+    div.className = 'tile';
+    div.textContent = tile.id;
+
+    if (isTileDead(tile)) {
+      div.classList.add('dead');
+      div.title = 'Unplayable — sits between two safe corporations. Will be recycled for a new tile on your next turn.';
+    } else if (G.phase === 'PLACE_TILE') {
+      div.onclick = () => handleTilePlacement(tile.row, tile.col);
+    }
+
+    container.appendChild(div);
+  }
+
+  // Info about tiles remaining
+  const info = document.createElement('span');
+  info.style.cssText = 'margin-left:auto;font-size:0.8rem;color:var(--text-dim);';
+  info.textContent = `${G.tileBag.length} tiles in bag`;
+  container.appendChild(info);
+}
+
+function renderPhaseInfo() {
+  const nameEl = document.getElementById('currentPlayerName');
+  const phaseEl = document.getElementById('currentPhaseText');
+  const p = currentPlayer();
+
+  nameEl.textContent = p.name;
+  nameEl.style.color = '#fff';
+
+  const phaseTexts = {
+    'PLACE_TILE': 'Place a tile on the board',
+    'FOUND_CORP': 'Choose a corporation to found',
+    'MERGER_SURVIVOR': 'Choose which corporation survives the merger',
+    'MERGER_DISPOSE': 'Dispose of defunct stock',
+    'BUY_STOCK': 'Buy stocks (up to 3)',
+    'GAME_OVER': 'Game Over',
+  };
+  phaseEl.textContent = phaseTexts[G.phase] || '';
+}
+
+function renderLog() {
+  const container = document.getElementById('gameLog');
+  container.innerHTML = '';
+  const recent = G.log.slice(-30);
+  for (const msg of recent) {
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.textContent = msg;
+    container.appendChild(div);
+  }
+  container.scrollTop = container.scrollHeight;
+}
+
+// ============================================================
+// EVENT HANDLERS
+// ============================================================
+function handleTilePlacement(row, col) {
+  if (G.phase !== 'PLACE_TILE') return;
+
+  const p = currentPlayer();
+  const tileIdx = p.tiles.findIndex(t => t && t.row === row && t.col === col);
+  if (tileIdx < 0) return;
+
+  const tile = p.tiles[tileIdx];
+  if (isTileDead(tile)) return;
+
+  // Remove from hand
+  p.tiles[tileIdx] = null;
+
+  // Place and determine result
+  const result = placeTile(tile);
+  G.phase = result;
+
+  renderAll();
+
+  if (result === 'FOUND_CORP') {
+    showFoundCorpModal();
+  } else if (result === 'MERGER_SURVIVOR') {
+    showMergerSurvivorModal();
+  } else if (result === 'MERGER_DISPOSE') {
+    // Summary modal is already shown by processNextDefunct
+  } else if (result === 'BUY_STOCK') {
+    showStockPurchase();
+  }
+}
+
+// ============================================================
+// MODAL HANDLERS
+// ============================================================
+function calcFoundingSize() {
+  // BFS from the founding tile through all connected placed-but-no-corp tiles
+  const { row, col } = G.founding;
+  const visited = new Set();
+  const queue = [{ row, col }];
+  visited.add(`${row},${col}`);
+
+  while (queue.length > 0) {
+    const cur = queue.shift();
+    for (const a of getAdjacentCells(cur.row, cur.col)) {
+      const key = `${a.row},${a.col}`;
+      if (visited.has(key)) continue;
+      const cell = G.board[a.row][a.col];
+      if (cell.placed && !cell.corp) {
+        visited.add(key);
+        queue.push(a);
+      }
+    }
+  }
+  return visited.size;
+}
+
+function showFoundCorpModal() {
+  const container = document.getElementById('foundCorpChoices');
+  container.innerHTML = '';
+  const available = CORPORATIONS.filter(c => !G.corps[c.id].active);
+  const startSize = calcFoundingSize();
+  const tierLabels = ['Budget', 'Standard', 'Premium'];
+  const tierDescs = ['Lowest share price', 'Mid-range share price', 'Highest share price'];
+
+  // Update the description
+  document.querySelector('#foundCorpModal .modal p').textContent =
+    `Your tile created a new group of ${startSize} tiles! Choose a corporation to found:`;
+
+  // Group available corps by tier
+  const tiers = [0, 1, 2];
+  for (const tier of tiers) {
+    const corpsInTier = available.filter(c => c.tier === tier);
+    if (corpsInTier.length === 0) continue;
+
+    const price = getStockPrice(corpsInTier[0].id, startSize);
+
+    const group = document.createElement('div');
+    group.className = 'corp-tier-group';
+
+    const label = document.createElement('div');
+    label.className = 'corp-tier-label';
+    label.textContent = `${tierLabels[tier]} — $${price}/share`;
+    group.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'corp-tier-row';
+
+    for (const corp of corpsInTier) {
+      const btn = document.createElement('button');
+      btn.className = 'corp-choice-btn';
+      btn.style.background = corp.color;
+      btn.textContent = corp.name;
+      btn.onclick = () => {
+        document.getElementById('foundCorpModal').classList.remove('show');
+        foundCorporation(corp.id);
+        renderAll();
+        if (G.phase === 'BUY_STOCK') showStockPurchase();
+      };
+      row.appendChild(btn);
+    }
+
+    group.appendChild(row);
+    container.appendChild(group);
+  }
+  document.getElementById('foundCorpModal').classList.add('show');
+}
+
+function showMergerSurvivorModal() {
+  const { involvedCorps } = G.merger;
+  const maxSize = involvedCorps[0].size;
+  const tied = involvedCorps.filter(c => c.size === maxSize);
+
+  document.getElementById('mergerSurvivorText').textContent =
+    `These corporations are tied at ${maxSize} tiles. Choose which survives:`;
+
+  const container = document.getElementById('mergerSurvivorChoices');
+  container.innerHTML = '';
+  for (const c of tied) {
+    const corp = CORPORATIONS.find(co => co.id === c.id);
+    const btn = document.createElement('button');
+    btn.className = 'corp-choice-btn';
+    btn.style.background = corp.color;
+    btn.textContent = `${corp.name} (${c.size})`;
+    btn.onclick = () => {
+      document.getElementById('mergerSurvivorModal').classList.remove('show');
+      chooseMergerSurvivor(c.id);
+    };
+    container.appendChild(btn);
+  }
+  document.getElementById('mergerSurvivorModal').classList.add('show');
+}
+
+function showMergerSummary(defunct) {
+  const survivorId = G.merger.survivor;
+  const survivorInfo = G.merger.involvedCorps.find(c => c.id === survivorId);
+  const survivorName = CORPORATIONS.find(c => c.id === survivorId).name;
+  const survivorColor = CORPORATIONS.find(c => c.id === survivorId).color;
+  const defunctCorp = CORPORATIONS.find(c => c.id === defunct.id);
+  const defunctSize = corpSize(defunct.id);
+  const defunctPrice = getStockPrice(defunct.id, defunctSize);
+
+  let html = '';
+
+  // Merger overview
+  html += `<div style="margin-bottom:1.2rem;">`;
+  html += `<p><span style="color:${survivorColor};font-weight:700;">${survivorName}</span> (${survivorInfo.size} tiles) acquires <span style="color:${defunctCorp.color};font-weight:700;">${defunctCorp.name}</span> (${defunctSize} tiles)</p>`;
+  html += `<p style="font-size:0.85rem;">Defunct stock price: <strong>$${defunctPrice}/share</strong></p>`;
+  html += `</div>`;
+
+  // Bonus table
+  if (G.merger.bonusLog.length > 0) {
+    html += `<table class="merger-summary-table">`;
+    html += `<tr><th>Player</th><th>Shares Held</th><th>Role</th><th>Bonus Received</th></tr>`;
+    for (const entry of G.merger.bonusLog) {
+      html += `<tr>
+        <td>${entry.name}</td>
+        <td>${entry.shares}</td>
+        <td>${entry.role}</td>
+        <td class="bonus-positive">+$${entry.bonus.toLocaleString()}</td>
+      </tr>`;
+    }
+    html += `</table>`;
+  } else {
+    html += `<p>No shareholders held stock in ${defunctCorp.name}.</p>`;
+  }
+
+  // Show stockholders who need to dispose
+  const holders = G.players.filter(p => playerStocks(p.index, defunct.id) > 0);
+  if (holders.length > 0) {
+    html += `<p style="margin-top:1rem;font-size:0.85rem;">Shareholders must now decide: <strong>sell</strong> shares at $${defunctPrice} each, <strong>trade</strong> 2-for-1 into ${survivorName}, or <strong>keep</strong>.</p>`;
+  }
+
+  document.getElementById('mergerSummaryTitle').textContent = `Merger: ${defunctCorp.name} Acquired`;
+  document.getElementById('mergerSummaryContent').innerHTML = html;
+  document.getElementById('mergerSummaryModal').classList.add('show');
+}
+
+function dismissMergerSummary() {
+  document.getElementById('mergerSummaryModal').classList.remove('show');
+
+  // Now proceed to dispose or next defunct
+  if (G.merger.disposePlayerQueue.length === 0) {
+    const result = processNextDefunct();
+    G.phase = result;
+    renderAll();
+    if (result === 'MERGER_DISPOSE') {
+      // showMergerSummary was already called inside processNextDefunct
+    } else if (result === 'BUY_STOCK') {
+      showStockPurchase();
+    }
+  } else {
+    G.merger.currentDisposePlayer = G.merger.disposePlayerQueue.shift();
+    G.phase = 'MERGER_DISPOSE';
+    renderAll();
+    showDisposeModal();
+  }
+}
+
+function showDisposeModal() {
+  const pIdx = G.merger.currentDisposePlayer;
+  const defunctId = G.merger.currentDefunct;
+  const survivorId = G.merger.survivor;
+  const player = G.players[pIdx];
+  const held = playerStocks(pIdx, defunctId);
+  const defunctName = CORPORATIONS.find(c => c.id === defunctId).name;
+  const survivorName = CORPORATIONS.find(c => c.id === survivorId).name;
+  const price = getStockPrice(defunctId, corpSize(defunctId));
+
+  document.getElementById('disposeTitle').textContent = `${player.name} — Dispose ${defunctName} Stock`;
+  document.getElementById('disposeText').textContent =
+    `You hold ${held} shares of ${defunctName} ($${price}/share). You may sell, trade 2-for-1 to ${survivorName} (${stocksAvailable(survivorId)} available), or keep.`;
+
+  const controls = document.getElementById('disposeControls');
+  controls.innerHTML = `
+    <div class="dispose-row">
+      <label>Sell (at $${price} each):</label>
+      <div class="stock-purchase-controls">
+        <button onclick="adjDispose('sell', -1, ${held})">−</button>
+        <span class="stock-purchase-count" id="disposeSell">0</span>
+        <button onclick="adjDispose('sell', 1, ${held})">+</button>
+      </div>
+    </div>
+    <div class="dispose-row">
+      <label>Trade (2 → 1 ${survivorName}):</label>
+      <div class="stock-purchase-controls">
+        <button onclick="adjDispose('trade', -2, ${held})">−</button>
+        <span class="stock-purchase-count" id="disposeTrade">0</span>
+        <button onclick="adjDispose('trade', 2, ${held})">+</button>
+      </div>
+    </div>
+    <div class="dispose-row">
+      <label>Keep:</label>
+      <span class="stock-purchase-count" id="disposeKeep">${held}</span>
+    </div>
+  `;
+
+  document.getElementById('mergerDisposeModal').classList.add('show');
+}
+
+function adjDispose(type, delta, total) {
+  const sell = parseInt(document.getElementById('disposeSell').textContent);
+  const trade = parseInt(document.getElementById('disposeTrade').textContent);
+
+  let newSell = sell, newTrade = trade;
+  if (type === 'sell') newSell = sell + delta;
+  if (type === 'trade') newTrade = trade + delta;
+
+  if (newSell < 0 || newTrade < 0) return;
+  if (newSell + newTrade > total) return;
+  if (newTrade % 2 !== 0) return;
+
+  // Check survivor availability for trade
+  const survivorId = G.merger.survivor;
+  if (newTrade / 2 > stocksAvailable(survivorId)) return;
+
+  document.getElementById('disposeSell').textContent = newSell;
+  document.getElementById('disposeTrade').textContent = newTrade;
+  document.getElementById('disposeKeep').textContent = total - newSell - newTrade;
+}
+
+// ============================================================
+// PRICE CHART
+// ============================================================
+function showPriceChart() {
+  const table = document.getElementById('priceTable');
+  const sizeLabels = ['2', '3', '4', '5', '6-10', '11-20', '21-30', '31-40', '41+'];
+
+  let html = '<tr><th>Chain Size</th>';
+  const tierNames = ['Budget<br>(Sackson, Zeta)', 'Standard<br>(America, Fusion, Worldwide)', 'Premium<br>(Phoenix, Continental)'];
+  for (const tn of tierNames) html += `<th>${tn}</th>`;
+  html += '<th>Majority<br>Bonus</th><th>Minority<br>Bonus</th></tr>';
+
+  for (let i = 0; i < 9; i++) {
+    html += `<tr><td><strong>${sizeLabels[i]}</strong></td>`;
+    for (let t = 0; t < 3; t++) {
+      const price = BASE_PRICES[i] + TIER_BONUS[t];
+      html += `<td>$${price}</td>`;
+    }
+    // Bonuses based on tier 0 price as example
+    const midPrice = BASE_PRICES[i] + TIER_BONUS[0];
+    html += `<td>$${midPrice * 10}</td><td>$${midPrice * 5}</td>`;
+    html += '</tr>';
+  }
+  table.innerHTML = html;
+  document.getElementById('priceChartModal').classList.add('show');
+}
+
+function closePriceChart(e) {
+  if (e.target === document.getElementById('priceChartModal')) {
+    document.getElementById('priceChartModal').classList.remove('show');
+  }
+}
+
+// ============================================================
+// GAME INITIALIZATION
+// ============================================================
+function startGame() {
+  const names = [
+    document.getElementById('p1name').value.trim() || 'Player 1',
+    document.getElementById('p2name').value.trim() || 'Player 2',
+    document.getElementById('p3name').value.trim() || 'Player 3',
+    document.getElementById('p4name').value.trim() || 'Player 4',
+  ];
+
+  initState(names);
+
+  // Replace any initial dead tiles
+  for (let i = 0; i < G.players.length; i++) {
+    replaceDeadTiles(i);
+  }
+
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'flex';
+
+  addLog('Game started!');
+  addLog(`${G.players[0].name} goes first.`);
+
+  renderAll();
+}
+
+// Keyboard shortcut to close modals
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.getElementById('priceChartModal').classList.remove('show');
+  }
+});
+
+// JS-based tooltip for disabled buttons
+(function() {
+  let tip = null;
+  document.addEventListener('mouseover', (e) => {
+    const btn = e.target.closest('[data-tooltip]');
+    if (btn && btn.disabled) {
+      if (!tip) {
+        tip = document.createElement('div');
+        tip.className = 'tooltip-popup';
+        document.body.appendChild(tip);
+      }
+      tip.textContent = btn.getAttribute('data-tooltip');
+      const rect = btn.getBoundingClientRect();
+      tip.style.left = (rect.left + rect.width / 2) + 'px';
+      tip.style.top = rect.top + 'px';
+      tip.style.display = 'block';
+    }
+  });
+  document.addEventListener('mouseout', (e) => {
+    const btn = e.target.closest('[data-tooltip]');
+    if (btn && tip) {
+      tip.style.display = 'none';
+    }
+  });
+})();
+</script>
+</body>
+</html>

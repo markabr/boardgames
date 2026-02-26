@@ -1,0 +1,22 @@
+{
+  "name": "@railbound/game-logic",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ticket-to-ride": "./src/ticket-to-ride/index.ts",
+    "./shared": "./src/shared/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.5"
+  }
+}
