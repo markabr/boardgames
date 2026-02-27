@@ -1,3 +1,3 @@
-export * from './types';
-export * from './scoring';
-export * from './cosmetics';
+export * from './types.js';
+export * from './scoring.js';
+export * from './cosmetics.js';

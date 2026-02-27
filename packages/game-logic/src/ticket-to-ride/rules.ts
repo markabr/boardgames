@@ -12,7 +12,7 @@ import type {
   ValidationResult,
   ScoreBreakdown,
   GamePhase,
-} from './types';
+} from './types.js';
 import {
   ROUTES,
   DESTINATION_TICKETS,
@@ -28,7 +28,7 @@ import {
   SETUP_MIN_KEEP,
   GAMEPLAY_MIN_KEEP,
   DESTINATION_DRAW_COUNT,
-} from './constants';
+} from './constants.js';
 
 // ============ SEEDED PRNG ============
 

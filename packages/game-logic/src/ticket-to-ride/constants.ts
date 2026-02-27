@@ -5,7 +5,7 @@ import type {
   TrainCardColor,
   CardColor,
   RouteColor,
-} from './types';
+} from './types.js';
 
 // ============ GAME CONSTANTS ============
 
