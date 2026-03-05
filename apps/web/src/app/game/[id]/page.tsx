@@ -9,6 +9,7 @@ import type {
 import { GameSync } from "@/lib/game-sync";
 import { useGameStore } from "@/lib/stores/game-store";
 import { showToast } from "@/components/platform/toast";
+import { getGuestId, getGuestName } from "@/lib/guest-auth";
 
 // Lazy-load the TTR game component
 const TicketToRideGame = lazy(() =>
@@ -28,21 +29,13 @@ export default function GamePage({
     useGameStore();
   const [scores, setScores] = useState<ScoreBreakdown[] | undefined>();
 
-  // TODO: Get from auth/session. For now use query params or localStorage
-  const [playerId] = useState(
-    () =>
-      (typeof window !== "undefined" &&
-        new URLSearchParams(window.location.search).get("playerId")) ||
-      "player-1"
-  );
-  const [playerName] = useState(
-    () =>
-      (typeof window !== "undefined" &&
-        new URLSearchParams(window.location.search).get("playerName")) ||
-      "Player 1"
-  );
-
   useEffect(() => {
+    // Read guest identity inside useEffect (client-only) to avoid SSR hydration
+    // mismatch — useState initializers run during SSR where window/localStorage
+    // are unavailable, and React preserves the server value during hydration.
+    const playerId = getGuestId();
+    const playerName = getGuestName();
+
     const sync = new GameSync();
     syncRef.current = sync;
 
@@ -75,7 +68,7 @@ export default function GamePage({
       sync.disconnect();
       syncRef.current = null;
     };
-  }, [gameId, playerId, playerName, setGameState, setConnected, setError]);
+  }, [gameId, setGameState, setConnected, setError]);
 
   const handleAction = useCallback(
     (action: GameAction) => {
