@@ -4,6 +4,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { GameManager } from './engine/game-manager.js';
+import { LobbyManager } from './lobby.js';
 import { setupSocketHandlers } from './socket-handlers.js';
 
 const app = express();
@@ -17,6 +18,7 @@ const io = new Server(httpServer, {
 });
 
 const gameManager = new GameManager();
+const lobbyManager = new LobbyManager();
 
 app.use(cors());
 app.use(express.json());
@@ -78,7 +80,17 @@ app.get('/api/games/:gameId/state/:playerId', (req, res) => {
   res.json(view);
 });
 
-setupSocketHandlers(io, gameManager);
+// Look up lobby by room code (for joining via URL)
+app.get('/api/lobbies/:roomCode', (req, res) => {
+  const lobby = lobbyManager.findByRoomCode(req.params.roomCode);
+  if (!lobby) {
+    res.status(404).json({ error: 'Lobby not found' });
+    return;
+  }
+  res.json(lobby);
+});
+
+setupSocketHandlers(io, gameManager, lobbyManager);
 
 const PORT = process.env.GAME_SERVER_PORT || 3001;
 httpServer.listen(PORT, () => {
