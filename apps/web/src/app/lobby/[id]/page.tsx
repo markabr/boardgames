@@ -21,6 +21,7 @@ export default function LobbyPage({
   const syncRef = useRef<LobbySync | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [connecting, setConnecting] = useState(true);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const playerIdRef = useRef(getGuestId());
   const playerNameRef = useRef(getGuestName());
 
@@ -59,6 +60,8 @@ export default function LobbyPage({
 
     const unsubError = sync.onLobbyError((err) => {
       showToast(err, "error");
+      setConnectionError(err);
+      setConnecting(false);
     });
 
     const unsubStarted = sync.onGameStarted(handleGameStarted);
@@ -76,7 +79,14 @@ export default function LobbyPage({
           playerIdRef.current,
           playerNameRef.current
         );
-        router.replace(`/lobby/${result.roomCode}?gameType=${gameType}`);
+        // Use history.replaceState to update URL without unmounting the component.
+        // router.replace() would change the [id] param, causing Next.js to unmount
+        // and remount — which destroys the socket connection and the lobby.
+        window.history.replaceState(
+          null,
+          "",
+          `/lobby/${result.roomCode}?gameType=${gameType}`
+        );
       } else {
         sync.joinLobby(
           id.toUpperCase(),
@@ -129,16 +139,32 @@ export default function LobbyPage({
     players.length >= 2 &&
     players.filter((p) => !p.isHost).every((p) => p.isReady);
 
-  if (connecting) {
+  if (connecting || connectionError) {
     return (
       <>
         <Navbar />
         <div className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-800 to-stone-700 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-8 h-8 border-4 border-amber-800 border-t-amber-400 rounded-full animate-spin mx-auto mb-3" />
-            <div className="text-orange-50 text-lg font-bold">
-              {id === "new" ? "Creating lobby..." : "Joining lobby..."}
-            </div>
+            {connectionError ? (
+              <>
+                <div className="text-red-400 text-lg font-bold mb-2">
+                  {connectionError}
+                </div>
+                <button
+                  onClick={() => router.push("/home")}
+                  className="mt-4 px-4 py-2 rounded-lg bg-amber-800 text-white text-sm font-bold hover:bg-amber-700 cursor-pointer"
+                >
+                  Back to Home
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="w-8 h-8 border-4 border-amber-800 border-t-amber-400 rounded-full animate-spin mx-auto mb-3" />
+                <div className="text-orange-50 text-lg font-bold">
+                  {id === "new" ? "Creating lobby..." : "Joining lobby..."}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </>
